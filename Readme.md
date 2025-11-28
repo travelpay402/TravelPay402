@@ -72,7 +72,7 @@ LAX Airport → Downtown LA
 ### Installation (Self-Hosted)
 
 ```bash
-git clone https://github.com/yourusername/travelpay402.git
+git clone https://github.com/travelpay402/travelpay402.git
 cd travelpay402
 pip install -r requirements.txt
 ```
@@ -507,7 +507,7 @@ Pull requests welcome. For major changes, open an issue first.
 ## 📞 Support
 
 - **Issues:** GitHub Issues
-- **Contact:** [Your Email]
+- **Contact:** [travelpay402@gmail.com]
 - **Status:** Check `/` endpoint for system status
 
 ---
