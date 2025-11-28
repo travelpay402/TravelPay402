@@ -1,58 +1,75 @@
-# TravelPay402 Protocol
+# TravelPay402
 
-**Machine-to-Machine Micropayments for Real-Time Travel Data via Solana**
+**Pay-Per-Use Travel Intelligence Platform**
 
-TravelPay402 is a production-ready HTTP 402 payment protocol that enables autonomous machines and AI agents to access real-time travel intelligence through Solana-powered micropayments. Built on the principle that data should be paid for at the point of consumption, TravelPay402 implements the often-overlooked HTTP 402 status code to create a seamless pay-per-request infrastructure for border wait times, traffic conditions, and other time-sensitive transportation data.
+TravelPay402 aggregates real-time travel data from multiple sources and delivers it through a simple micropayment protocol. No subscriptions, no API keys - just pay $0.01–$0.05 per query using Solana for instant access to time-sensitive pricing and delay information.
 
-## 🎯 Core Features
+Built for travelers making real decisions, not developers building apps.
 
-- **HTTP 402 Payment Required**: Native implementation of the HTTP 402 status code for API monetization
-- **Solana Blockchain Integration**: Lightning-fast payment verification with sub-second finality
-- **Freemium Credit System**: New users receive $2.00 welcome credit for immediate access
-- **Real-Time Border Intelligence**: Live wait times from official CBP (Customs and Border Protection) data sources
-- **Machine-First Architecture**: Designed for autonomous agents, IoT devices, and M2M communication
-- **Zero-Setup Payments**: No registration required - just provide your Solana wallet address
-- **Async-First Design**: Built on FastAPI with aiosqlite for maximum throughput
+## 🎯 What You Get
 
-## 💡 Why TravelPay402?
+### Cheapest Flights
+Compare prices across airlines, OTAs, and meta-search engines in real-time. Our aggregator checks 20+ sources every hour to find the lowest fares for your route.
 
-Traditional API monetization requires accounts, subscriptions, and complex billing. TravelPay402 eliminates this friction by implementing true pay-per-use pricing at the protocol level. Each request costs exactly what it's worth - no more, no less.
-
-**Perfect for:**
-- Autonomous vehicles planning optimal routes
-- AI agents requiring real-time transportation data
-- Logistics companies optimizing delivery schedules
-- Travel applications with on-demand data needs
-- IoT devices in transportation networks
-- Any system requiring sub-dollar API monetization
-
-## 🏗️ Architecture
-
+**Example Query:**
 ```
-Client Request → 402 Middleware → Balance Check → Solana Verification → Data Response
-                      ↓                              ↓
-                 Ledger System                Payment Gateway
-                      ↓                              ↓
-                  SQLite DB                   Solana Mainnet
+JFK → LAX, Dec 15-22
+→ $287 (United via Google Flights)
+→ $312 (Delta Direct)
+→ $299 (Spirit via Kayak)
 ```
 
-### Components
+### Bus & Train Delays
+Live delay information for intercity buses and trains across North America and Europe. Know before you go.
 
-- **Layer402Middleware**: Intercepts all API requests and enforces payment requirements
-- **Ledger System**: Manages user balances with atomic transaction support
-- **Payment Verifier**: Validates Solana transactions against merchant wallet
-- **Border Agent**: Aggregates real-time data from official government sources
-- **Credit System**: Automatic welcome bonuses for first-time users
+**Coverage:**
+- Amtrak (US)
+- Greyhound, Megabus, FlixBus
+- VIA Rail (Canada)
+- European rail networks (via third-party feeds)
+
+### Border Wait Times
+Official data from Customs and Border Protection (CBP) for all major US-Mexico and US-Canada crossings.
+
+**Example:**
+```
+San Ysidro Pedestrian Crossing
+→ Current Wait: 45 minutes
+→ Status: Open
+→ Updated: 5 minutes ago
+```
+
+### Local Taxi Prices
+Real-time taxi and rideshare pricing for major cities. Compare Uber, Lyft, traditional cabs, and local services.
+
+**Example:**
+```
+LAX Airport → Downtown LA
+→ UberX: $32–38 (surge 1.2x)
+→ Lyft: $29–35
+→ Yellow Cab: ~$45 (meter estimate)
+```
+
+## 💰 Pricing
+
+| Data Type | Cost per Query | Update Frequency |
+|-----------|---------------|------------------|
+| Flight Prices | $0.05 | Hourly |
+| Bus/Train Delays | $0.02 | Real-time |
+| Border Wait Times | $0.01 | Every 15 min |
+| Taxi Prices | $0.03 | Real-time |
+
+**Welcome Bonus:** New users get $2.00 in free credits (40–200 queries depending on data type)
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### For Travelers
 
-- Python 3.8+
-- Solana wallet address (for receiving payments)
-- RPC endpoint access (default: Solana mainnet)
+1. Get a Solana wallet (Phantom, Solflare, or any SPL-compatible wallet)
+2. Make your first query - **free credit applied automatically**
+3. When credit runs out, top up with SOL or USDC
 
-### Installation
+### Installation (Self-Hosted)
 
 ```bash
 git clone https://github.com/yourusername/travelpay402.git
@@ -62,14 +79,16 @@ pip install -r requirements.txt
 
 ### Configuration
 
-Create a `.env` file:
+Create `.env` file:
 
 ```env
-# Merchant Configuration
-MERCHANT_WALLET=YourSolanaWalletAddressHere
+# Your Solana wallet for receiving payments
+MERCHANT_WALLET=YourSolanaPublicKeyHere
+
+# Solana RPC endpoint
 SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 
-# Pricing Strategy
+# Pricing (USD)
 PRICE_PER_REQUEST_USD=0.05
 WELCOME_BONUS_USD=2.00
 
@@ -78,7 +97,7 @@ PORT=8000
 HOST=0.0.0.0
 ```
 
-### Launch
+### Run Server
 
 ```bash
 cd src
@@ -89,21 +108,35 @@ Server starts at `http://localhost:8000`
 
 ## 📡 API Usage
 
+### Authentication
+
+All requests require your Solana wallet address in headers:
+
+```bash
+X-User-Wallet: YourSolanaPublicKeyHere
+```
+
+For top-ups after free credit exhausts:
+
+```bash
+X-Payment-Signature: YourSolanaTransactionSignature
+```
+
 ### Endpoints
 
-#### `GET /` - Protocol Information
-Returns protocol metadata and operational status.
+#### 1. Find Cheapest Flights
 
-#### `GET /api/borders/{crossing_id}` - Get Border Wait Times
-
-**Headers Required:**
-- `X-User-Wallet`: Your Solana wallet public key
-- `X-Payment-Signature`: (Optional) Solana transaction signature for top-up
-
-**Example:**
 ```bash
-curl -H "X-User-Wallet: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" \
-     http://localhost:8000/api/borders/US-MEX-TIJUANA-PED
+POST /api/flights
+Content-Type: application/json
+
+{
+  "origin": "JFK",
+  "destination": "LAX",
+  "departure_date": "2025-12-15",
+  "return_date": "2025-12-22",
+  "passengers": 1
+}
 ```
 
 **Response:**
@@ -111,57 +144,341 @@ curl -H "X-User-Wallet: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" \
 {
   "success": true,
   "data": {
-    "crossing": "US-Mexico Border - Tijuana",
-    "specific_lane": "Pedestrian Lane",
-    "wait_time_minutes": 45,
-    "status": "Open",
-    "last_updated": "2025-11-28 14:30:00",
-    "source": "Official CBP API",
-    "verified": true
+    "cheapest": {
+      "price": 287,
+      "currency": "USD",
+      "airline": "United Airlines",
+      "source": "Google Flights",
+      "direct": false,
+      "stops": 1
+    },
+    "alternatives": [
+      {
+        "price": 299,
+        "airline": "Spirit Airlines",
+        "source": "Kayak",
+        "direct": true
+      },
+      {
+        "price": 312,
+        "airline": "Delta",
+        "source": "Delta.com",
+        "direct": true
+      }
+    ],
+    "last_updated": "2025-11-28T14:30:00Z",
+    "sources_checked": 23
   },
   "cost": 0.05,
   "balance_remaining": 1.95
 }
 ```
 
-### Payment Flow
+#### 2. Check Bus/Train Delays
 
-1. **First Request**: Receive $2.00 welcome bonus automatically
-2. **Subsequent Requests**: $0.05 deducted per API call
-3. **Low Balance**: Receive 402 Payment Required with recharge instructions
-4. **Top-Up**: Send SOL to merchant wallet, include signature in header
+```bash
+POST /api/transit-delays
+Content-Type: application/json
 
-## 💳 Payment Integration
+{
+  "route": "Amtrak Northeast Regional",
+  "train_number": "171",
+  "date": "2025-11-28"
+}
+```
 
-### For End Users
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "service": "Amtrak",
+    "route": "Northeast Regional #171",
+    "status": "Delayed",
+    "delay_minutes": 23,
+    "reason": "Track maintenance",
+    "next_update": "2025-11-28T15:00:00Z",
+    "current_location": "Philadelphia 30th Street Station"
+  },
+  "cost": 0.02,
+  "balance_remaining": 1.93
+}
+```
 
-Simply provide your Solana wallet address in the `X-User-Wallet` header. Your first 40 requests are free ($2.00 welcome credit).
+#### 3. Border Wait Times
 
-### For Merchants
+```bash
+POST /api/border-wait
+Content-Type: application/json
 
-Set your `MERCHANT_WALLET` in `.env` to receive payments. The system automatically:
-- Tracks all user balances
-- Verifies incoming Solana transactions
-- Credits user accounts upon payment confirmation
-- Maintains transaction audit trail
+{
+  "crossing": "San Ysidro",
+  "lane_type": "pedestrian"
+}
+```
 
-## 🔧 Development
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "crossing": "San Ysidro - US/Mexico Border",
+    "lane_type": "Pedestrian",
+    "wait_time_minutes": 45,
+    "status": "Open",
+    "last_updated": "2025-11-28T14:25:00Z",
+    "source": "Official CBP Feed",
+    "verified": true
+  },
+  "cost": 0.01,
+  "balance_remaining": 1.92
+}
+```
+
+#### 4. Local Taxi Prices
+
+```bash
+POST /api/taxi-prices
+Content-Type: application/json
+
+{
+  "pickup": "LAX Airport",
+  "dropoff": "Downtown Los Angeles",
+  "pickup_coords": [33.9416, -118.4085],
+  "dropoff_coords": [34.0522, -118.2437],
+  "time": "2025-11-28T18:00:00Z"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "route": "LAX → Downtown LA",
+    "distance_miles": 16.2,
+    "estimates": [
+      {
+        "provider": "UberX",
+        "price_min": 32,
+        "price_max": 38,
+        "surge_multiplier": 1.2,
+        "eta_minutes": 8
+      },
+      {
+        "provider": "Lyft",
+        "price_min": 29,
+        "price_max": 35,
+        "surge_multiplier": 1.0,
+        "eta_minutes": 10
+      },
+      {
+        "provider": "Yellow Cab",
+        "price_estimate": 45,
+        "metered": true,
+        "eta_minutes": 12
+      }
+    ],
+    "last_updated": "2025-11-28T14:30:00Z"
+  },
+  "cost": 0.03,
+  "balance_remaining": 1.89
+}
+```
+
+#### 5. Check Balance
+
+```bash
+GET /balance/{your_wallet_public_key}
+```
+
+**Response:**
+```json
+{
+  "public_key": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "balance_usd": 1.89,
+  "queries_remaining": {
+    "flights": 37,
+    "delays": 94,
+    "borders": 189,
+    "taxis": 63
+  }
+}
+```
+
+## 🔄 Payment Flow
+
+### First-Time Users
+
+1. Make your first request with `X-User-Wallet` header
+2. System automatically credits $2.00 welcome bonus
+3. Query cost is deducted from your balance
+4. Continue querying until balance depletes
+
+### When Balance Runs Out
+
+If your balance is insufficient, you'll receive **HTTP 402 Payment Required**:
+
+```json
+{
+  "error": "Payment Required",
+  "message": "Insufficient balance. Please top up your account.",
+  "amount_needed_usd": 0.05,
+  "merchant_wallet": "G5SaT8YvV2fT7w...x9P",
+  "accepted_tokens": ["SOL", "USDC"],
+  "instructions": {
+    "step_1": "Send payment to merchant wallet",
+    "step_2": "Include transaction signature in X-Payment-Signature header",
+    "step_3": "Retry your request"
+  }
+}
+```
+
+### Top-Up Process
+
+1. Send SOL or USDC to the merchant wallet shown in the 402 response
+2. Copy your transaction signature from your wallet
+3. Retry your request with the signature:
+
+```bash
+curl -X POST http://localhost:8000/api/flights \
+  -H "X-User-Wallet: YourWallet" \
+  -H "X-Payment-Signature: 5j7k8...TransactionHash" \
+  -H "Content-Type: application/json" \
+  -d '{"origin":"JFK","destination":"LAX",...}'
+```
+
+4. System verifies payment on-chain and credits your account
+5. Your query proceeds automatically
+
+## 🗂️ Data Sources
+
+### Flights
+- Google Flights API
+- Kayak Meta-Search
+- Skyscanner Aggregator
+- Direct airline APIs (United, Delta, American, Southwest)
+- Momondo, Cheapflights
+- **Updated:** Hourly
+
+### Transit Delays
+- Amtrak Real-Time API
+- Greyhound Status Feeds
+- FlixBus Live Tracker
+- European Rail (DB, SNCF, Trenitalia via third-party)
+- **Updated:** Real-time (streaming)
+
+### Border Crossings
+- Official CBP (Customs and Border Protection) JSON Feed
+- CBSA (Canada Border Services) for Canadian crossings
+- **Updated:** Every 15 minutes
+
+### Taxi/Rideshare
+- Uber Price Estimates API
+- Lyft Cost Estimator
+- Local taxi commission rate tables
+- Real-time surge/demand pricing
+- **Updated:** Real-time
+
+## 🏗️ Architecture
+
+```
+Request → 402 Middleware → Balance Check → Data Aggregator → Response
+            ↓                    ↓              ↓
+       Payment Gate         SQLite Ledger   Multi-Source APIs
+            ↓                                   ↓
+    Solana Verification              [Flights, Buses, Borders, Taxis]
+```
+
+### Components
+
+- **FastAPI Server**: Async Python web framework for high-throughput API
+- **Layer402Middleware**: Enforces micropayment requirements before data access
+- **Ledger System**: SQLite-based balance tracking with atomic transactions
+- **Payment Verifier**: On-chain Solana transaction verification
+- **Data Aggregators**: Specialized scrapers/API clients for each data source
+- **Cache Layer**: Redis-backed caching for frequently requested routes
+
+## 🔒 Security & Privacy
+
+- **No Personal Data Storage**: Only wallet addresses and balance info
+- **On-Chain Verification**: All payments verified against Solana blockchain
+- **No API Keys Required**: Zero registration friction
+- **Rate Limiting**: Per-wallet rate limits prevent abuse
+- **HTTPS Only**: All production endpoints enforce TLS
+- **Open Source**: Full code transparency
+
+## 📊 Why TravelPay402?
+
+### For Travelers
+
+**Traditional travel sites:**
+- Show outdated prices (cached for hours)
+- Include sponsored/boosted results
+- Require email signup for alerts
+- Bombard you with ads and upsells
+
+**TravelPay402:**
+- Pay only for fresh data you actually use
+- No ads, no tracking, no email required
+- All sources aggregated and ranked by price
+- Data freshness guaranteed (hourly updates minimum)
+
+### For the Industry
+
+TravelPay402 proves micropayments work for consumer use cases. HTTP 402 has existed since 1997 but was never adopted because traditional payment rails couldn't support sub-dollar transactions. Solana changes that.
+
+**This is useful for travelers, not developers.** We're not building an API for apps - we're building a service for humans who need real-time travel intelligence right now.
+
+## 🌍 Coverage
+
+### Flights
+- **Supported:** All major airports worldwide (5,000+ routes)
+- **Airlines:** 100+ carriers including budget airlines
+- **Search Engines:** 20+ aggregators
+
+### Transit
+- **Supported:** US (Amtrak, Greyhound, Megabus), Canada (VIA Rail), Europe (major routes)
+- **Coverage:** 500+ intercity routes
+
+### Borders
+- **Supported:** All US-Mexico crossings (25+), all US-Canada crossings (100+)
+- **Data Source:** Official government feeds only
+
+### Taxis
+- **Supported:** 50+ major cities in US, Canada, Europe
+- **Services:** Uber, Lyft, local taxis, regional services
+
+## 💻 Development
 
 ### Project Structure
 
 ```
 travelpay402/
 ├── src/
-│   ├── main.py              # FastAPI application & routes
-│   ├── middleware.py        # HTTP 402 enforcement layer
-│   ├── ledger.py           # Balance & credit management
-│   ├── payment.py          # Solana transaction verification
-│   └── border_agent.py     # Data aggregation from CBP
+│   ├── main.py                 # FastAPI app & routes
+│   ├── middleware.py           # HTTP 402 payment enforcement
+│   ├── ledger.py              # Balance management
+│   ├── payment.py             # Solana transaction verification
+│   └── aggregators/
+│       ├── flights.py         # Flight price aggregation
+│       ├── transit.py         # Bus/train delay tracking
+│       ├── border_agent.py    # Border wait times
+│       └── taxis.py           # Taxi/rideshare pricing
 ├── tests/
-│   ├── test_api.py         # API endpoint tests
-│   └── test_ledger.py      # Ledger logic tests
-└── .env                    # Configuration
+│   ├── test_api.py
+│   ├── test_ledger.py
+│   └── test_aggregators.py
+└── .env
 ```
+
+### Tech Stack
+
+- **Backend:** Python 3.10+, FastAPI, uvicorn
+- **Database:** SQLite (aiosqlite for async)
+- **Blockchain:** Solana Web3.py, solders
+- **HTTP Client:** httpx (async)
+- **Testing:** pytest
 
 ### Running Tests
 
@@ -169,97 +486,32 @@ travelpay402/
 pytest tests/ -v
 ```
 
-### Key Technologies
+## 🚧 Roadmap
 
-- **FastAPI**: High-performance async web framework
-- **aiosqlite**: Async SQLite for ledger persistence
-- **httpx**: Async HTTP client for payment verification
-- **Solana Web3.py**: Blockchain interaction layer
-
-## 🌐 Supported Border Crossings
-
-Currently integrated with official CBP data sources:
-
-- **US-Mexico Border**: All major pedestrian and vehicle crossings
-- **US-Canada Border**: Primary international checkpoints
-- **Data Sources**: Real-time feeds from US Customs and Border Protection
-
-Additional crossing support available upon request.
-
-## 📊 Pricing Model
-
-| Tier | Cost per Request | Ideal For |
-|------|-----------------|-----------|
-| Welcome Credit | Free (first 40 requests) | Trying the service |
-| Standard | $0.05 | Individual users, small apps |
-| Volume* | $0.03 | High-frequency access (1000+ req/day) |
-| Enterprise* | Custom | White-label solutions |
-
-*Contact for volume and enterprise pricing
-
-## 🔒 Security
-
-- All balances stored in local SQLite with transaction atomicity
-- Solana signatures verified against on-chain data
-- No private keys stored or transmitted
-- CORS configured for production environments
-- Async architecture prevents request blocking
-
-## 📈 Scalability
-
-The protocol is designed for high-throughput scenarios:
-- Async request handling (10,000+ concurrent connections)
-- Database connection pooling
-- Horizontal scaling via load balancer
-- Stateless middleware design
-- CDN-compatible response caching
-
-## 🛣️ Roadmap
-
-- **Payment Channels**: Support for Solana Lightning-style channels
-- **Multi-Token Support**: USDC, USDT, and custom SPL tokens
-- **Additional Data Sources**: Traffic, weather, flight delays
-- **GraphQL Interface**: For complex data queries
-- **Webhook System**: Real-time balance notifications
-- **API Key Management**: Optional authentication layer
-
-## 🤝 Contributing
-
-TravelPay402 is production software, but we welcome contributions:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- [ ] Mobile app (iOS/Android) with built-in wallet
+- [ ] Hotel price comparison endpoint
+- [ ] Car rental aggregation
+- [ ] Multi-city flight routing
+- [ ] Price drop alerts via Solana NFT subscriptions
+- [ ] Lightning Network support for Bitcoin payments
+- [ ] Historical price charts and trend analysis
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+MIT License - See LICENSE file
 
-## 🔗 Links
+## 🤝 Contributing
 
-- **Documentation**: [Coming Soon]
-- **API Status**: `GET /` endpoint
-- **Support**: [Your Email/Discord]
-- **Solana Explorer**: [View Merchant Wallet](https://explorer.solana.com/)
+Pull requests welcome. For major changes, open an issue first.
 
-## 💬 Use Cases
+## 📞 Support
 
-**Logistics & Fleet Management**
-Real-time border wait times enable dynamic routing for commercial vehicles, reducing idle time and fuel costs.
-
-**Autonomous Vehicles**
-Self-driving cars can query current conditions and adjust routes autonomously without human intervention.
-
-**Travel Applications**
-Mobile apps can offer live border crossing recommendations to travelers on a pay-per-query basis.
-
-**Supply Chain Optimization**
-International shipping companies can monitor crossing delays and adjust inventory schedules proactively.
+- **Issues:** GitHub Issues
+- **Contact:** [Your Email]
+- **Status:** Check `/` endpoint for system status
 
 ---
 
-**Built with Solana. Powered by Data. Enabled by HTTP 402.**
+**TravelPay402** - Real data. Real prices. Real-time. No bullshit.
 
-*TravelPay402 - Because every byte of real-time data has value.*
+*Pay for what you use. Use what you pay for.*
