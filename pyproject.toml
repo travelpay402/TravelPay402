@@ -1,0 +1,91 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "travelpay-sdk"
+version = "0.5.0"
+description = "HTTP 402 Micropayment Protocol SDK for Solana - Pay-per-request API monetization with Verifiable Oracle & Event Subscriptions"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "TravelPay402", email = "contact@travelpay402.com" }
+]
+keywords = [
+    "solana", 
+    "micropayments", 
+    "http-402", 
+    "api", 
+    "blockchain", 
+    "usdc",
+    "oracle",
+    "webhooks",
+    "subscriptions"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Office/Business :: Financial :: Point-Of-Sale",
+    "Topic :: Security :: Cryptography",
+]
+dependencies = [
+    # Web Framework
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.22.0",
+    # Solana
+    "solana>=0.30.0",
+    "solders>=0.18.0",
+    # Database
+    "aiosqlite>=0.19.0",
+    # HTTP Client
+    "httpx>=0.24.0",
+    # Environment
+    "python-dotenv>=1.0.0",
+    # === NEW: Update 5 Dependencies ===
+    # Redis for high-performance caching
+    "redis>=5.0.0",
+    # Ed25519 cryptographic signing (libsodium)
+    "pynacl>=1.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black",
+    "ruff",
+    "types-redis",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/travelpay402/TravelPay402"
+Documentation = "https://travelpay402.com/docs"
+Repository = "https://github.com/travelpay402/TravelPay402"
+Issues = "https://github.com/travelpay402/TravelPay402/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["travelpay"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

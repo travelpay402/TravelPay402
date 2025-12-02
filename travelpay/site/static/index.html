@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelPay402 - HTTP 402 Micropayments</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --orange: #E8A035;
+            --orange-light: #F5B74A;
+            --orange-dark: #D4912A;
+            --black: #1A1A1A;
+            --black-light: #2D2D2D;
+            --white: #FFFFFF;
+            --gray: #888888;
+            --green: #00C853;
+            --red: #FF5252;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--orange);
+            color: var(--black);
+            min-height: 100vh;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+        
+        .header-logo svg { width: 32px; height: 32px; }
+        
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .wallet-balance {
+            background: var(--black);
+            color: var(--orange);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        
+        .wallet-balance.visible { display: block; }
+        
+        .btn {
+            background: var(--black);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-disconnect {
+            background: transparent;
+            color: var(--black);
+            padding: 8px 12px;
+            font-size: 0.85em;
+            display: none;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 40px 20px 60px;
+        }
+        
+        .logo { width: 100px; height: 100px; margin: 0 auto 20px; }
+        .logo svg { width: 100%; height: 100%; animation: pulse 2s ease-in-out infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(10px); }
+        }
+        
+        h1 {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+        }
+        
+        .tagline { font-size: 1.2em; opacity: 0.8; }
+        
+        .demo-section {
+            background: var(--black);
+            padding: 60px 20px;
+        }
+        
+        .demo-container { max-width: 600px; margin: 0 auto; }
+        
+        .demo-section h2 {
+            color: var(--orange);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+        
+        .demo-card {
+            background: var(--black-light);
+            border-radius: 16px;
+            padding: 30px;
+        }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; color: var(--gray); margin-bottom: 8px; font-size: 0.9em; }
+        
+        .input-group select {
+            width: 100%;
+            background: var(--black);
+            border: 2px solid transparent;
+            color: var(--white);
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        
+        .input-group select:focus { outline: none; border-color: var(--orange); }
+        
+        .payment-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .payment-toggle button {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--black);
+            background: var(--black);
+            color: var(--gray);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .payment-toggle button.active { border-color: var(--orange); color: var(--orange); }
+        .payment-toggle button:hover { border-color: var(--orange); }
+        
+        .price-display {
+            text-align: center;
+            padding: 20px;
+            background: var(--black);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .price-display .amount { font-size: 2em; font-weight: 700; color: var(--orange); }
+        .price-display .label { color: var(--gray); font-size: 0.9em; margin-top: 5px; }
+        
+        .demo-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1em;
+            background: var(--orange);
+            color: var(--black);
+        }
+        
+        .demo-btn:hover { background: var(--orange-light); }
+        
+        .result-container { margin-top: 20px; display: none; }
+        .result-container.visible { display: block; }
+        
+        .result-card {
+            background: var(--black);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid var(--orange);
+        }
+        
+        .result-card.error { border-left-color: var(--red); }
+        .result-card.success { border-left-color: var(--green); }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-header h3 { color: var(--white); font-size: 1.1em; }
+        
+        .result-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .result-status.success { background: rgba(0,200,83,0.2); color: var(--green); }
+        .result-status.error { background: rgba(255,82,82,0.2); color: var(--red); }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .result-row:last-child { border-bottom: none; }
+        .result-row .label { color: var(--gray); }
+        .result-row .value { color: var(--white); font-weight: 600; }
+        .result-row .value.highlight { color: var(--orange); font-size: 1.3em; }
+        
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 60px 20px; }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .card {
+            background: var(--black);
+            border-radius: 16px;
+            padding: 30px;
+            color: var(--white);
+            transition: all 0.3s;
+        }
+        
+        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .card h3 { color: var(--orange); font-size: 1.2em; margin-bottom: 15px; }
+        .card p { color: var(--gray); line-height: 1.6; }
+        
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--black-light);
+        }
+        
+        footer a { color: var(--black); text-decoration: none; font-weight: 600; }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--black);
+            color: var(--white);
+            padding: 16px 24px;
+            border-radius: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+            max-width: 350px;
+        }
+        
+        .toast.visible { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--red); }
+        .toast.info { border-left: 4px solid var(--orange); }
+        
+        @media (max-width: 600px) {
+            .header { flex-direction: column; gap: 15px; padding: 15px 20px; }
+            h1 { font-size: 2.2em; }
+            .wallet-section { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-logo">
+            <svg viewBox="0 0 100 100"><polygon points="20,15 80,50 20,85 20,55 35,55 35,45 20,45" fill="#1A1A1A"/></svg>
+            TravelPay402
+        </div>
+        <div class="wallet-section">
+            <div class="wallet-balance" id="walletBalance">Balance: <span id="balanceAmount">$0.00</span></div>
+            <button class="btn" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+            <button class="btn btn-disconnect" id="disconnectBtn" onclick="disconnectWallet()">Disconnect</button>
+        </div>
+    </header>
+
+    <div class="hero">
+        <div class="logo">
+            <svg viewBox="0 0 100 100"><polygon points="20,15 80,50 20,85 20,55 35,55 35,45 20,45" fill="#1A1A1A"/></svg>
+        </div>
+        <h1>TravelPay402</h1>
+        <p class="tagline">HTTP 402 Micropayments on Solana</p>
+    </div>
+
+    <div class="demo-section">
+        <div class="demo-container">
+            <h2>🚦 Try It Now</h2>
+            <div class="demo-card">
+                <div class="input-group">
+                    <label>Border Crossing</label>
+                    <select id="crossingSelect">
+                        <option value="San Ysidro">San Ysidro (San Diego)</option>
+                        <option value="Otay Mesa">Otay Mesa</option>
+                        <option value="El Paso">El Paso</option>
+                        <option value="Laredo">Laredo</option>
+                        <option value="Nogales">Nogales</option>
+                        <option value="Calexico">Calexico</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Payment Method</label>
+                    <div class="payment-toggle">
+                        <button id="paySOL" class="active" onclick="setPayment('SOL')">◎ SOL</button>
+                        <button id="payUSDC" onclick="setPayment('USDC')">$ USDC</button>
+                    </div>
+                </div>
+                
+                <div class="price-display">
+                    <div class="amount" id="priceAmount">$0.05</div>
+                    <div class="label" id="priceLabel">≈ 0.00033 SOL</div>
+                </div>
+                
+                <button class="btn demo-btn" id="requestBtn" onclick="makeRequest()">
+                    <span id="requestBtnText">Get Border Wait Time</span>
+                </button>
+                
+                <div class="result-container" id="resultContainer">
+                    <div class="result-card" id="resultCard">
+                        <div class="result-header">
+                            <h3>Result</h3>
+                            <span class="result-status" id="resultStatus">Success</span>
+                        </div>
+                        <div id="resultBody"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="cards">
+            <div class="card">
+                <h3>⚡ Pay Per Request</h3>
+                <p>No subscriptions. Pay only for what you use with SOL or USDC.</p>
+            </div>
+            <div class="card">
+                <h3>🤖 M2M Ready</h3>
+                <p>Built for AI agents to pay programmatically.</p>
+            </div>
+            <div class="card">
+                <h3>📦 SDK Available</h3>
+                <p>pip install travelpay-sdk</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built with Solana • <a href="/docs">API Docs</a> • <a href="https://github.com/travelpay402/travelpay-sdk">GitHub</a></p>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = window.location.origin;
+        const PRICE = 0.05;
+        const SOL_RATE = 150;
+        
+        let state = { wallet: null, publicKey: null, balance: 0, payMethod: 'SOL', connected: false };
+
+        function setPayment(method) {
+            state.payMethod = method;
+            document.getElementById('paySOL').classList.toggle('active', method === 'SOL');
+            document.getElementById('payUSDC').classList.toggle('active', method === 'USDC');
+            
+            const sol = PRICE / SOL_RATE;
+            document.getElementById('priceLabel').textContent = method === 'SOL' 
+                ? `≈ ${sol.toFixed(6)} SOL` 
+                : `= ${PRICE.toFixed(2)} USDC`;
+        }
+
+        async function connectWallet() {
+            const provider = window.phantom?.solana || window.solana;
+            if (!provider) {
+                showToast('Install Phantom wallet', 'error');
+                window.open('https://phantom.app/', '_blank');
+                return;
+            }
+            
+            try {
+                showToast('Connecting...', 'info');
+                await provider.connect();
+                state.wallet = provider;
+                state.publicKey = provider.publicKey.toString();
+                state.connected = true;
+                
+                document.getElementById('connectBtn').innerHTML = `<span style="font-family:monospace">${state.publicKey.slice(0,4)}...${state.publicKey.slice(-4)}</span>`;
+                document.getElementById('disconnectBtn').style.display = 'block';
+                document.getElementById('walletBalance').classList.add('visible');
+                
+                await fetchBalance();
+                showToast('Connected!', 'success');
+            } catch (e) {
+                showToast('Connection failed', 'error');
+            }
+        }
+
+        function disconnectWallet() {
+            state.wallet?.disconnect?.();
+            state = { wallet: null, publicKey: null, balance: 0, payMethod: 'SOL', connected: false };
+            
+            document.getElementById('connectBtn').textContent = 'Connect Wallet';
+            document.getElementById('disconnectBtn').style.display = 'none';
+            document.getElementById('walletBalance').classList.remove('visible');
+            showToast('Disconnected', 'info');
+        }
+
+        async function fetchBalance() {
+            if (!state.publicKey) return;
+            try {
+                const res = await fetch(`${API}/balance/${state.publicKey}`);
+                const data = await res.json();
+                state.balance = data.balance_usd || 0;
+                document.getElementById('balanceAmount').textContent = `$${state.balance.toFixed(2)}`;
+            } catch (e) {}
+        }
+
+        async function makeRequest() {
+            if (!state.connected) {
+                showToast('Connect wallet first', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('requestBtn');
+            const btnText = document.getElementById('requestBtnText');
+            
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> Processing...';
+            
+            try {
+                const crossing = document.getElementById('crossingSelect').value;
+                
+                let res = await fetch(`${API}/border-wait`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-Wallet': state.publicKey },
+                    body: JSON.stringify({ crossing })
+                });
+                
+                if (res.status === 402) {
+                    showToast('Credits exhausted. Sending payment...', 'info');
+                    const payData = await res.json();
+                    const sig = await sendPayment(payData.detail.payment);
+                    
+                    if (!sig) throw new Error('Payment cancelled');
+                    
+                    showToast('Confirming...', 'info');
+                    await new Promise(r => setTimeout(r, 2000));
+                    
+                    res = await fetch(`${API}/border-wait`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'X-User-Wallet': state.publicKey,
+                            'X-Solana-Payment-Tx': sig
+                        },
+                        body: JSON.stringify({ crossing })
+                    });
+                }
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail?.message || 'Request failed');
+                }
+                
+                const data = await res.json();
+                showResult(data, true);
+                await fetchBalance();
+                
+            } catch (e) {
+                showResult({ error: e.message }, false);
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Get Border Wait Time';
+            }
+        }
+
+        async function sendPayment(info) {
+            if (!state.wallet) throw new Error('No wallet');
+            
+            try {
+                const { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } = solanaWeb3;
+                const conn = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+                
+                const tx = new Transaction().add(
+                    SystemProgram.transfer({
+                        fromPubkey: new PublicKey(state.publicKey),
+                        toPubkey: new PublicKey(info.recipient_wallet),
+                        lamports: info.options.SOL.lamports
+                    })
+                );
+                
+                tx.feePayer = new PublicKey(state.publicKey);
+                tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+                
+                const signed = await state.wallet.signTransaction(tx);
+                const sig = await conn.sendRawTransaction(signed.serialize());
+                
+                showToast('Payment sent!', 'success');
+                return sig;
+            } catch (e) {
+                if (e.message?.includes('User rejected')) showToast('Cancelled', 'info');
+                else showToast(`Payment failed: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        function showResult(data, success) {
+            const container = document.getElementById('resultContainer');
+            const card = document.getElementById('resultCard');
+            const status = document.getElementById('resultStatus');
+            const body = document.getElementById('resultBody');
+            
+            container.classList.add('visible');
+            card.className = `result-card ${success ? 'success' : 'error'}`;
+            status.className = `result-status ${success ? 'success' : 'error'}`;
+            status.textContent = success ? 'Success' : 'Error';
+            
+            if (success && !data.error) {
+                body.innerHTML = `
+                    <div class="result-row"><span class="label">Crossing</span><span class="value">${data.crossing || 'N/A'}</span></div>
+                    <div class="result-row"><span class="label">Wait Time</span><span class="value highlight">${data.wait_time_minutes || 0} min</span></div>
+                    <div class="result-row"><span class="label">Status</span><span class="value">${data.status || 'Unknown'}</span></div>
+                    <div class="result-row"><span class="label">Updated</span><span class="value">${data.last_updated || 'N/A'}</span></div>
+                `;
+            } else {
+                body.innerHTML = `<div class="result-row"><span class="label">Error</span><span class="value">${data.error || 'Unknown'}</span></div>`;
+            }
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast visible ${type}`;
+            setTimeout(() => toast.classList.remove('visible'), 4000);
+        }
+
+        // Init
+        setPayment('SOL');
+        if (window.solana?.isConnected) connectWallet();
+    </script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</body>
+</html>

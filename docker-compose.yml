@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # Redis - High-Performance Caching Layer
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: travelpay_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - travelpay_net
+
+  # ========================================
+  # TravelPay402 API Server
+  # ========================================
+  travelpay402:
+    build: .
+    container_name: travelpay402
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # Core Configuration
+      - MERCHANT_WALLET=${MERCHANT_WALLET}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      - PRICE_PER_REQUEST_USD=${PRICE_PER_REQUEST_USD:-0.05}
+      - WELCOME_BONUS_USD=${WELCOME_BONUS_USD:-2.00}
+      - SOL_USD_PRICE=${SOL_USD_PRICE:-150.00}
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL_SECONDS=${CACHE_TTL_SECONDS:-300}
+      # Oracle Keys (auto-generated if not provided)
+      - ORACLE_PRIVATE_KEY=${ORACLE_PRIVATE_KEY:-}
+      # Subscription Configuration
+      - SUBSCRIPTION_PRICE_USD=${SUBSCRIPTION_PRICE_USD:-0.20}
+      - SUBSCRIPTION_CHECK_INTERVAL=${SUBSCRIPTION_CHECK_INTERVAL:-60}
+    volumes:
+      - travelpay_data:/app/data
+      - travelpay_logs:/app/logs
+      - ./.env:/app/.env:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - travelpay_net
+
+volumes:
+  travelpay_data:
+  travelpay_logs:
+  redis_data:
+
+networks:
+  travelpay_net:
+    driver: bridge
